@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Oferta Ładunków Silo – Hoffmann Transport</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --red:   #C00000;
+      --navy:  #143392;
+      --dark:  #0d1940;
+      --bg:    #f0f2f5;
+    }
+
+    * { box-sizing: border-box; }
+    body { background: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; }
+
+    /* ═══════════════════════════════════════
+       HEADER
+    ═══════════════════════════════════════ */
+    .app-header {
+      background: linear-gradient(120deg, var(--dark) 0%, var(--navy) 60%, #1a3fa8 100%);
+      color: white;
+      border-bottom: 4px solid var(--red);
+      box-shadow: 0 4px 16px rgba(0,0,0,.35);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* dekoracyjny ukos w tle */
+    .app-header::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 38%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.04));
+      pointer-events: none;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 1.3rem 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Logo / marka */
+    .brand { flex-shrink: 0; }
+    .brand-logo-wrap {
+      background: white;
+      border-radius: 8px;
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    .brand-logo {
+      height: 90px;
+      width: auto;
+      display: block;
+    }
+    @media (max-width: 768px) {
+      .brand-logo { height: 48px; }
+      .brand-logo-wrap { padding: 4px 8px; }
+    }
+
+    /* Tytuł strony (środek) */
+    .header-title {
+      flex: 1;
+      text-align: center;
+    }
+    .header-title h1 {
+      font-family: 'Montserrat', 'Segoe UI', sans-serif;
+      font-size: 1.65rem;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      line-height: 1.15;
+    }
+    .header-title h1 .emoji { font-style: normal; }
+    .header-title .sub {
+      font-family: 'Montserrat', 'Segoe UI', sans-serif;
+      font-size: .72rem;
+      font-weight: 600;
+      opacity: .55;
+      margin-top: .3rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    @media (max-width: 768px) {
+      .header-title h1 { font-size: 1.1rem; }
+    }
+    .updated-pill {
+      display: inline-block;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 20px;
+      padding: .18rem .75rem;
+      font-size: .72rem;
+      margin-top: .3rem;
+    }
+
+    /* Prawa strona: QR + języki */
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    /* QR Code */
+    .qr-box {
+      background: white;
+      border-radius: 8px;
+      padding: 5px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .qr-box img {
+      display: block;
+      width: 88px;
+      height: 88px;
+      border-radius: 4px;
+    }
+    .qr-box .qr-label {
+      font-size: .58rem;
+      color: var(--navy);
+      font-weight: 700;
+      letter-spacing: .5px;
+      margin-top: 3px;
+      text-transform: uppercase;
+    }
+
+    /* Języki z flagami */
+    .lang-switcher {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .lang-btn {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.22);
+      color: white;
+      border-radius: 7px;
+      padding: .22rem .65rem .22rem .45rem;
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .lang-btn:hover { background: rgba(255,255,255,.25); }
+    .lang-btn.active {
+      background: white;
+      color: var(--navy);
+      border-color: white;
+      font-weight: 700;
+    }
+    .lang-btn img { border-radius: 2px; }
+
+    /* Mobile header */
+    /* ── Action bar (Mam wolne auto) ── */
+    .header-action-bar {
+      background: rgba(0,0,0,.18);
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding: .8rem 2rem;
+      display: flex;
+      justify-content: center;
+    }
+    .btn-free-truck {
+      background: var(--red);
+      color: white;
+      border: none;
+      border-radius: 35px;
+      padding: .85rem 4rem;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all .18s;
+      box-shadow: 0 4px 20px rgba(192,0,0,.5);
+      text-transform: uppercase;
+      min-width: 340px;
+    }
+    .btn-free-truck:hover {
+      background: #a00000;
+      transform: translateY(-2px);
+      box-shadow: 0 7px 24px rgba(192,0,0,.6);
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: white;
+      border-radius: 16px;
+      max-width: 580px;
+      width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 12px 50px rgba(0,0,0,.3);
+      animation: modalIn .2s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(-18px) scale(.97); }
+      to   { opacity: 1; transform: none; }
+    }
+    .modal-header {
+      background: linear-gradient(120deg, var(--dark) 0%, var(--navy) 100%);
+      color: white;
+      padding: 1.2rem 1.5rem;
+      border-radius: 16px 16px 0 0;
+      border-bottom: 3px solid var(--red);
+    }
+    .modal-header h3 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .modal-header p { font-size: .8rem; opacity: .7; margin: .3rem 0 0; }
+    .modal-body { padding: 1.4rem 1.5rem; }
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid #eee;
+      display: flex;
+      gap: .75rem;
+      justify-content: flex-end;
+    }
+    .form-section-label {
+      font-family: 'Montserrat', sans-serif;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--navy);
+      margin: 1.1rem 0 .5rem;
+      padding-bottom: .3rem;
+      border-bottom: 2px solid var(--red);
+      display: inline-block;
+    }
+    .modal-body .form-control,
+    .modal-body .form-select {
+      border-radius: 8px;
+      border-color: #d0d6de;
+      font-size: .88rem;
+    }
+    .modal-body .form-control:focus,
+    .modal-body .form-select:focus {
+      border-color: var(--navy);
+      box-shadow: 0 0 0 .2rem rgba(20,51,146,.15);
+    }
+    .btn-cancel {
+      background: #f0f2f5;
+      color: #555;
+      border: none;
+      border-radius: 8px;
+      padding: .55rem 1.3rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-cancel:hover { background: #e0e4ea; }
+    .btn-send {
+      background: var(--red);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: .55rem 1.5rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .btn-send:hover { background: #a00000; }
+
+    @media (max-width: 768px) {
+      .header-inner { padding: .75rem 1rem; gap: .75rem; }
+      .header-title h1 { font-size: 1.1rem; }
+      .qr-box { display: none; }
+      .lang-switcher { flex-direction: row; }
+      .lang-btn .lang-name { display: none; }
+      .header-action-bar { padding: .6rem 1rem; }
+      .btn-free-truck { font-size: .95rem; padding: .65rem 2rem; min-width: 0; width: 90%; }
+      .modal-body { padding: 1rem; }
+      .modal-footer { flex-direction: column-reverse; }
+      .btn-cancel, .btn-send { width: 100%; text-align: center; }
+    }
+
+    /* ═══════════════════════════════════════
+       FILTER BAR
+    ═══════════════════════════════════════ */
+    .filter-bar {
+      background: white;
+      padding: .75rem 1.5rem;
+      border-bottom: 1px solid #e0e4ea;
+      box-shadow: 0 2px 6px rgba(0,0,0,.06);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .filter-bar .form-control,
+    .filter-bar .form-select {
+      font-size: .84rem;
+      border-radius: 8px;
+      border-color: #d0d6de;
+    }
+    .filter-bar .form-control:focus,
+    .filter-bar .form-select:focus {
+      border-color: var(--navy);
+      box-shadow: 0 0 0 .2rem rgba(20,51,146,.15);
+    }
+    .count-pill {
+      background: var(--red);
+      color: white;
+      border-radius: 20px;
+      padding: .2rem .85rem;
+      font-size: .8rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .btn-reset {
+      font-size: .8rem;
+      color: #888;
+      padding: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-reset:hover { color: var(--red); }
+
+    /* ═══════════════════════════════════════
+       TABLE
+    ═══════════════════════════════════════ */
+    .table-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.07);
+      overflow: hidden;
+    }
+
+    #loads-table thead th {
+      background: var(--navy);
+      color: white;
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      padding: .75rem 1rem;
+      border: none;
+      white-space: nowrap;
+    }
+
+    .load-row {
+      cursor: pointer;
+      transition: background .1s;
+      border-bottom: 1px solid #f2f4f7;
+    }
+    .load-row:hover { background: #f4f7ff; }
+    .load-row td { padding: .65rem 1rem; vertical-align: middle; }
+    .row-num { color: #c8d0db; font-size: .78rem; font-weight: 700; }
+
+    .route-cell { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+    .loc-block  { display: flex; align-items: center; gap: .25rem; line-height: 1.3; }
+    .flag-img   { border-radius: 2px; vertical-align: middle; }
+    .cc         { font-weight: 700; font-size: .82rem; color: var(--navy); }
+    .postal     { color: #9aa5b4; font-size: .76rem; }
+    .city-name  { font-size: .87rem; color: #2d3748; }
+    .arrow      { color: var(--red); font-weight: 700; font-size: 1rem; margin: 0 .1rem; }
+
+    .cargo-text { font-size: .84rem; color: #3d4858; max-width: 260px; line-height: 1.4; }
+
+    .badge-gmp {
+      background: #198754;
+      color: white;
+      font-size: .7rem;
+      padding: .2em .55em;
+      border-radius: 5px;
+      font-weight: 700;
+    }
+
+    .date-range { font-size: .82rem; color: #4a5568; white-space: nowrap; line-height: 1.6; }
+    .date-sep   { color: #bbb; margin: 0 .2rem; }
+
+    /* Interest button */
+    .btn-interest {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      background: var(--navy);
+      color: white;
+      border: none;
+      border-radius: 7px;
+      padding: .32rem .7rem;
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .btn-interest:hover { background: #0d1940; color: white; }
+
+    /* Expand button */
+    .exp-btn {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid #d0d6de;
+      background: white;
+      cursor: pointer;
+      font-size: .72rem;
+      transition: all .15s;
+      color: #666;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .exp-btn:hover, .exp-btn.open {
+      background: var(--red);
+      border-color: var(--red);
+      color: white;
+    }
+
+    /* Expand row */
+    .expand-row { background: #f8f9fc; }
+    .expand-row > td { padding: 0; }
+    .expand-content {
+      padding: 1rem 1.5rem 1.4rem;
+      border-left: 4px solid var(--red);
+    }
+
+    .map-meta { display: flex; align-items: center; gap: .8rem; margin-bottom: .75rem; flex-wrap: wrap; }
+    .dist-chip {
+      background: white;
+      border: 1.5px solid #e0e4ea;
+      border-radius: 10px;
+      padding: .45rem 1rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .dist-chip .icon { font-size: 1.1rem; }
+    .dist-chip .lbl  { font-size: .72rem; color: #888; line-height: 1; }
+    .dist-chip .val  { font-size: 1.05rem; font-weight: 700; color: var(--navy); }
+
+    .btn-gmaps {
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-size: .83rem; color: #1a73e8;
+      border: 1.5px solid #1a73e8; border-radius: 8px;
+      padding: .4rem .9rem; text-decoration: none; transition: all .15s; white-space: nowrap;
+    }
+    .btn-gmaps:hover { background: #1a73e8; color: white; }
+
+    .map-div {
+      height: 290px; border-radius: 8px; overflow: hidden; border: 1px solid #dde2ea;
+    }
+    .map-placeholder {
+      height: 290px; display: flex; align-items: center; justify-content: center;
+      background: #f4f6f9; border: 1px solid #dde2ea; border-radius: 8px;
+      color: #9aa5b4; font-size: .88rem; gap: .5rem;
+    }
+    .map-spinner {
+      height: 290px; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: .6rem; background: #f9fafc;
+      border: 1px solid #dde2ea; border-radius: 8px; color: #9aa5b4; font-size: .82rem;
+    }
+
+    .no-results { text-align: center; padding: 4rem 1rem; color: #9aa5b4; }
+    .no-results .nr-icon { font-size: 3rem; }
+
+    #loading-msg { text-align: center; padding: 4rem 1rem; color: #9aa5b4; }
+
+    @media (max-width: 768px) {
+      .route-cell { flex-direction: column; align-items: flex-start; gap: .15rem; }
+      .arrow { transform: rotate(90deg); }
+      .hide-mobile { display: none !important; }
+      .cargo-text { max-width: none; }
+      .map-div, .map-placeholder, .map-spinner { height: 220px; }
+      .expand-content { padding: .8rem 1rem 1rem; }
+      .btn-interest .int-text { display: none; }
+      .filter-bar { padding: .65rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════ HEADER ════════════════════════════ -->
+<div class="app-header">
+  <div class="header-inner">
+
+    <!-- Logo firmy -->
+    <div class="brand">
+      <div class="brand-logo-wrap">
+        <img src="https://hoffmanntransport.pl/wp-content/uploads/2024/08/Hoffman-logo.png"
+             alt="Hoffmann Silo Logistic"
+             class="brand-logo"
+             onerror="this.parentElement.innerHTML='<span style=\'font-size:1.3rem;font-weight:900;letter-spacing:3px;color:var(--navy)\'>HOFFMANN</span>'">
+      </div>
+    </div>
+
+    <!-- Tytuł strony -->
+    <div class="header-title">
+      <h1>🚛 <span id="t-title">Oferta Ładunków Silo</span></h1>
+      <div id="last-updated" class="updated-pill d-none"></div>
+    </div>
+
+    <!-- Prawa strona: QR + języki -->
+    <div class="header-right">
+
+      <!-- QR zawsze widoczny (desktop) -->
+      <div class="qr-box">
+        <img id="qr-img" src="" alt="QR">
+        <div class="qr-label" id="qr-label">scan me</div>
+      </div>
+
+      <!-- Wybór języka z flagami -->
+      <div class="lang-switcher">
+        <button class="lang-btn active" onclick="setLang('PL')">
+          <img src="https://flagcdn.com/w20/pl.png" width="20" height="14" alt="PL">
+          <span class="lang-name">PL</span>
+        </button>
+        <button class="lang-btn" onclick="setLang('DE')">
+          <img src="https://flagcdn.com/w20/de.png" width="20" height="14" alt="DE">
+          <span class="lang-name">DE</span>
+        </button>
+        <button class="lang-btn" onclick="setLang('EN')">
+          <img src="https://flagcdn.com/w20/gb.png" width="20" height="14" alt="EN">
+          <span class="lang-name">EN</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Pasek akcji -->
+  <div class="header-action-bar">
+    <button class="btn-free-truck" onclick="openFreeTruckModal()">
+      🚛 <span id="t-free-truck-btn">Mam wolne auto</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════ MODAL: WOLNE AUTO ════════════════════════════ -->
+<div class="modal-overlay" id="free-truck-modal" onclick="handleModalClick(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🚛 <span id="t-ft-title">Zgłoś wolne auto</span></h3>
+      <p id="t-ft-desc">Wypełnij formularz — wyślemy zgłoszenie do działu sprzedaży Hoffmann Transport</p>
+    </div>
+    <div class="modal-body">
+
+      <!-- Lokalizacja auta -->
+      <div class="form-section-label" id="t-ft-sec1">📍 Aktualna lokalizacja auta</div>
+      <div class="row g-2">
+        <div class="col-5">
+          <input type="text" id="ft-loc-country" class="form-control" placeholder="Kraj (np. PL, DE)">
+        </div>
+        <div class="col-7">
+          <input type="text" id="ft-loc-city" class="form-control" placeholder="Miejscowość">
+        </div>
+      </div>
+
+      <!-- Data dostępności -->
+      <div class="form-section-label" id="t-ft-sec2">📅 Dostępne od</div>
+      <input type="date" id="ft-date" class="form-control">
+
+      <!-- Skąd / Dokąd -->
+      <div class="form-section-label" id="t-ft-sec3">🔀 Szukam ładunku</div>
+      <div class="row g-2 mb-2">
+        <div class="col-12">
+          <label class="form-label small text-muted mb-1" id="t-ft-from-lbl">Skąd (opcjonalnie)</label>
+          <div class="row g-2">
+            <div class="col-5">
+              <input type="text" id="ft-from-country" class="form-control" placeholder="Kraj">
+            </div>
+            <div class="col-7">
+              <input type="text" id="ft-from-city" class="form-control" placeholder="Miejscowość">
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <label class="form-label small text-muted mb-1" id="t-ft-to-lbl">Dokąd (opcjonalnie)</label>
+          <div class="row g-2">
+            <div class="col-5">
+              <input type="text" id="ft-to-country" class="form-control" placeholder="Kraj">
+            </div>
+            <div class="col-7">
+              <input type="text" id="ft-to-city" class="form-control" placeholder="Miejscowość">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typ auta -->
+      <div class="form-section-label" id="t-ft-sec4">🔧 Typ naczepy / auta</div>
+      <input type="text" id="ft-truck-type" class="form-control" placeholder="np. Cysterna silo, 25t">
+
+      <!-- Dane kontaktowe -->
+      <div class="form-section-label" id="t-ft-sec5">👤 Dane kontaktowe</div>
+      <div class="row g-2">
+        <div class="col-12">
+          <input type="text" id="ft-name" class="form-control" placeholder="Imię i nazwisko / Firma">
+        </div>
+        <div class="col-12">
+          <input type="text" id="ft-phone" class="form-control" placeholder="Telefon / Email">
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeFreeTruckModal()" id="t-ft-cancel">Anuluj</button>
+      <button class="btn-send" onclick="submitFreeTruck()">✉ <span id="t-ft-send">Wyślij zgłoszenie</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════ FILTER BAR ════════════════════════════ -->
+<div class="filter-bar">
+  <div class="row g-2 align-items-center">
+    <div class="col-12 col-sm-4 col-md-3">
+      <input id="search" type="text" class="form-control" placeholder="🔍 Szukaj kraju / miejscowości...">
+    </div>
+    <div class="col-6 col-sm-4 col-md-2">
+      <select id="filter-from" class="form-select">
+        <option value="">Kraj ZAŁ</option>
+      </select>
+    </div>
+    <div class="col-6 col-sm-4 col-md-2">
+      <select id="filter-to" class="form-select">
+        <option value="">Kraj ROZŁ</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <input id="date-from" type="date" class="form-control">
+    </div>
+    <div class="col-6 col-md-2">
+      <input id="date-to" type="date" class="form-control">
+    </div>
+  </div>
+  <div class="d-flex align-items-center gap-2 mt-2">
+    <span id="count-pill" class="count-pill">–</span>
+    <button class="btn-reset" onclick="resetFilters()">✕ <span id="t-clear">Wyczyść filtry</span></button>
+  </div>
+</div>
+
+<!-- ════════════════════════════ MAIN CONTENT ════════════════════════════ -->
+<div class="container-fluid px-3 py-3">
+
+  <div id="loading-msg">
+    <div class="spinner-border mb-2" style="color:var(--navy);width:1.8rem;height:1.8rem;" role="status"></div>
+    <div id="t-loading">Ładowanie danych...</div>
+  </div>
+
+  <div id="table-wrapper" class="table-card d-none">
+    <div class="table-responsive">
+      <table id="loads-table" class="table mb-0">
+        <thead>
+          <tr>
+            <th class="hide-mobile" style="width:38px;">#</th>
+            <th style="min-width:270px;" id="t-col-route">Trasa</th>
+            <th style="min-width:170px;" id="t-col-cargo">Towar</th>
+            <th class="hide-mobile text-center" style="width:55px;" id="t-col-gmp">GMP</th>
+            <th style="min-width:130px;" id="t-col-dates">Daty</th>
+            <th style="min-width:110px;"></th>
+            <th style="width:46px;"></th>
+          </tr>
+        </thead>
+        <tbody id="loads-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Translations
+═══════════════════════════════════════════════════════════════════════════ */
+const TRANSLATIONS = {
+  PL: {
+    title:       'Oferta Ładunków Silo',
+    search:      '🔍 Szukaj kraju / miejscowości...',
+    fromOpt:     'Kraj ZAŁ',
+    toOpt:       'Kraj ROZŁ',
+    clear:       'Wyczyść filtry',
+    colRoute:    'Trasa',
+    colCargo:    'Towar',
+    colGmp:      'GMP',
+    colDates:    'Daty',
+    loading:     'Ładowanie danych...',
+    loadingMap:  'Ładowanie mapy...',
+    noResults:   'Brak ładunków spełniających kryteria',
+    countLoads:  n => n + ' ładunków',
+    distLabel:   'Dystans drogowy',
+    updated:     'Aktualizacja:',
+    interested:  'Zainteresowany',
+    locLoad:     'Załadunek',
+    locUnload:   'Rozładunek',
+    noGeo:       '📍 Geokodowanie niedostępne – skorzystaj z przycisku Google Maps',
+    errorData:   'Błąd pobierania danych. Odśwież stronę.',
+    qrLabel:     'SKANUJ',
+    emailSubject: (l, u, date) =>
+      `Zainteresowany ładunkiem: ${l.country} ${l.city} → ${u.country} ${u.city} | ${date}`,
+    emailBody: (l, u, cargo, date, dateUnload) =>
+      `Dzień dobry,\n\nJestem zainteresowany następującym ładunkiem:\n\n` +
+      `Załadunek: ${l.country} ${l.postal} ${l.city}\n` +
+      `Rozładunek: ${u.country} ${u.postal} ${u.city}\n` +
+      `Towar: ${cargo}\nData załadunku: ${date}\nData rozładunku: ${dateUnload}\n\n` +
+      `Proszę o kontakt.\n\nPozdrawiam`,
+    ftBtn:      'Mam wolne auto',
+    ftTitle:    'Zgłoś wolne auto',
+    ftDesc:     'Wypełnij formularz — wyślemy zgłoszenie do działu sprzedaży Hoffmann Transport',
+    ftSec1:     '📍 Aktualna lokalizacja auta',
+    ftSec2:     '📅 Dostępne od',
+    ftSec3:     '🔀 Szukam ładunku',
+    ftSec4:     '🔧 Typ naczepy / auta',
+    ftSec5:     '👤 Dane kontaktowe',
+    ftFromLbl:  'Skąd (opcjonalnie)',
+    ftToLbl:    'Dokąd (opcjonalnie)',
+    ftCancel:   'Anuluj',
+    ftSend:     'Wyślij zgłoszenie',
+    ftPh: {
+      locCountry: 'Kraj (np. PL, DE)', locCity: 'Miejscowość', date: '',
+      fromCountry: 'Kraj', fromCity: 'Miejscowość',
+      toCountry: 'Kraj', toCity: 'Miejscowość',
+      truck: 'np. Cysterna silo, 25t', name: 'Imię i nazwisko / Firma', phone: 'Telefon / Email'
+    },
+    ftEmailSubject: 'Wolne auto – zgłoszenie przewoźnika',
+    ftEmailBody: (d) =>
+      `Dzień dobry,\n\nOtrzymaliśmy zgłoszenie wolnego auta:\n\n` +
+      `📍 Lokalizacja: ${d.locCountry} ${d.locCity}\n` +
+      `📅 Dostępne od: ${d.date}\n` +
+      `🔀 Skąd: ${d.fromCountry} ${d.fromCity || '–'}\n` +
+      `🔀 Dokąd: ${d.toCountry} ${d.toCity || '–'}\n` +
+      `🔧 Typ auta: ${d.truck || '–'}\n\n` +
+      `👤 Kontakt:\n${d.name}\n${d.phone}\n`
+  },
+  DE: {
+    title:       'Siloladungen-Angebot',
+    search:      '🔍 Land / Ort suchen...',
+    fromOpt:     'Land BEL',
+    toOpt:       'Land ENT',
+    clear:       'Filter zurücksetzen',
+    colRoute:    'Route',
+    colCargo:    'Ware',
+    colGmp:      'GMP',
+    colDates:    'Datum',
+    loading:     'Daten werden geladen...',
+    loadingMap:  'Karte wird geladen...',
+    noResults:   'Keine passenden Ladungen gefunden',
+    countLoads:  n => n + ' Ladungen',
+    distLabel:   'Fahrstrecke',
+    updated:     'Aktualisierung:',
+    interested:  'Interessiert',
+    locLoad:     'Beladung',
+    locUnload:   'Entladung',
+    noGeo:       '📍 Geocodierung nicht verfügbar – Google Maps verwenden',
+    errorData:   'Fehler beim Laden. Seite neu laden.',
+    qrLabel:     'SCANNEN',
+    emailSubject: (l, u, date) =>
+      `Interesse an Ladung: ${l.country} ${l.city} → ${u.country} ${u.city} | ${date}`,
+    emailBody: (l, u, cargo, date, dateUnload) =>
+      `Guten Tag,\n\nIch interessiere mich für folgende Ladung:\n\n` +
+      `Beladung: ${l.country} ${l.postal} ${l.city}\n` +
+      `Entladung: ${u.country} ${u.postal} ${u.city}\n` +
+      `Ware: ${cargo}\nBeladedatum: ${date}\nEntladedatum: ${dateUnload}\n\n` +
+      `Bitte nehmen Sie Kontakt mit mir auf.\n\nMit freundlichen Grüßen`,
+    ftBtn:      'Ich habe einen freien LKW',
+    ftTitle:    'Freien LKW melden',
+    ftDesc:     'Formular ausfüllen — wir leiten Ihre Anfrage an den Vertrieb weiter',
+    ftSec1:     '📍 Aktueller Standort des LKW',
+    ftSec2:     '📅 Verfügbar ab',
+    ftSec3:     '🔀 Ich suche Ladung',
+    ftSec4:     '🔧 Fahrzeugtyp / Auflieger',
+    ftSec5:     '👤 Kontaktdaten',
+    ftFromLbl:  'Von (optional)',
+    ftToLbl:    'Nach (optional)',
+    ftCancel:   'Abbrechen',
+    ftSend:     'Anfrage senden',
+    ftPh: {
+      locCountry: 'Land (z.B. DE, PL)', locCity: 'Ort', date: '',
+      fromCountry: 'Land', fromCity: 'Ort',
+      toCountry: 'Land', toCity: 'Ort',
+      truck: 'z.B. Silozisterne, 25t', name: 'Name / Firma', phone: 'Telefon / E-Mail'
+    },
+    ftEmailSubject: 'Freier LKW – Meldung vom Frachtführer',
+    ftEmailBody: (d) =>
+      `Guten Tag,\n\nFreier LKW wurde gemeldet:\n\n` +
+      `📍 Standort: ${d.locCountry} ${d.locCity}\n` +
+      `📅 Verfügbar ab: ${d.date}\n` +
+      `🔀 Von: ${d.fromCountry} ${d.fromCity || '–'}\n` +
+      `🔀 Nach: ${d.toCountry} ${d.toCity || '–'}\n` +
+      `🔧 Fahrzeugtyp: ${d.truck || '–'}\n\n` +
+      `👤 Kontakt:\n${d.name}\n${d.phone}\n`
+  },
+  EN: {
+    title:       'Silo Loads Offer',
+    search:      '🔍 Search country / city...',
+    fromOpt:     'Loading country',
+    toOpt:       'Unloading country',
+    clear:       'Clear filters',
+    colRoute:    'Route',
+    colCargo:    'Cargo',
+    colGmp:      'GMP',
+    colDates:    'Dates',
+    loading:     'Loading data...',
+    loadingMap:  'Loading map...',
+    noResults:   'No loads matching criteria',
+    countLoads:  n => n + ' loads',
+    distLabel:   'Road distance',
+    updated:     'Updated:',
+    interested:  'Interested',
+    locLoad:     'Loading point',
+    locUnload:   'Unloading point',
+    noGeo:       '📍 Geocoding unavailable – use Google Maps button',
+    errorData:   'Error loading data. Please refresh.',
+    qrLabel:     'SCAN ME',
+    emailSubject: (l, u, date) =>
+      `Interested in load: ${l.country} ${l.city} → ${u.country} ${u.city} | ${date}`,
+    emailBody: (l, u, cargo, date, dateUnload) =>
+      `Hello,\n\nI am interested in the following load:\n\n` +
+      `Loading: ${l.country} ${l.postal} ${l.city}\n` +
+      `Unloading: ${u.country} ${u.postal} ${u.city}\n` +
+      `Cargo: ${cargo}\nLoading date: ${date}\nUnloading date: ${dateUnload}\n\n` +
+      `Please contact me.\n\nBest regards`,
+    ftBtn:      'I have a free truck',
+    ftTitle:    'Report free truck',
+    ftDesc:     'Fill in the form — we will forward your request to the Hoffmann Transport sales team',
+    ftSec1:     '📍 Current truck location',
+    ftSec2:     '📅 Available from',
+    ftSec3:     '🔀 Looking for load',
+    ftSec4:     '🔧 Truck / trailer type',
+    ftSec5:     '👤 Contact details',
+    ftFromLbl:  'From (optional)',
+    ftToLbl:    'To (optional)',
+    ftCancel:   'Cancel',
+    ftSend:     'Send request',
+    ftPh: {
+      locCountry: 'Country (e.g. DE, PL)', locCity: 'City', date: '',
+      fromCountry: 'Country', fromCity: 'City',
+      toCountry: 'Country', toCity: 'City',
+      truck: 'e.g. Silo tanker, 25t', name: 'Name / Company', phone: 'Phone / Email'
+    },
+    ftEmailSubject: 'Free truck – carrier notification',
+    ftEmailBody: (d) =>
+      `Hello,\n\nFree truck notification received:\n\n` +
+      `📍 Location: ${d.locCountry} ${d.locCity}\n` +
+      `📅 Available from: ${d.date}\n` +
+      `🔀 From: ${d.fromCountry} ${d.fromCity || '–'}\n` +
+      `🔀 To: ${d.toCountry} ${d.toCity || '–'}\n` +
+      `🔧 Truck type: ${d.truck || '–'}\n\n` +
+      `👤 Contact:\n${d.name}\n${d.phone}\n`
+  }
+};
+
+const RECIPIENTS = 'lukasz.peizert@hoffmanntransport.pl;patryk.wojtysiak@hoffmanntransport.pl;tomasz.linetty@hoffmanntransport.pl';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   State
+═══════════════════════════════════════════════════════════════════════════ */
+let allLoads     = [];
+let filtered     = [];
+let mapInstances = {};
+let currentLang  = 'PL';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   QR Code – generuj przy starcie
+═══════════════════════════════════════════════════════════════════════════ */
+function initQR() {
+  const url = window.location.href.split('?')[0].split('#')[0];
+  document.getElementById('qr-img').src =
+    `https://api.qrserver.com/v1/create-qr-code/?size=88x88&margin=4&data=${encodeURIComponent(url)}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Language switch
+═══════════════════════════════════════════════════════════════════════════ */
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.querySelector('img').alt === lang);
+  });
+  const t = TRANSLATIONS[lang];
+  document.getElementById('t-title').textContent      = t.title;
+  document.getElementById('t-loading').textContent    = t.loading;
+  document.getElementById('t-clear').textContent      = t.clear;
+  document.getElementById('t-col-route').textContent  = t.colRoute;
+  document.getElementById('t-col-cargo').textContent  = t.colCargo;
+  document.getElementById('t-col-gmp').textContent    = t.colGmp;
+  document.getElementById('t-col-dates').textContent  = t.colDates;
+  document.getElementById('search').placeholder       = t.search;
+  document.getElementById('qr-label').textContent     = t.qrLabel;
+  const fFrom = document.getElementById('filter-from');
+  const fTo   = document.getElementById('filter-to');
+  if (fFrom.options[0]) fFrom.options[0].text = t.fromOpt;
+  if (fTo.options[0])   fTo.options[0].text   = t.toOpt;
+  const pill = document.getElementById('last-updated');
+  if (pill._rawDate) pill.textContent = t.updated + ' ' + pill._rawDate;
+  // Free truck form
+  document.getElementById('t-free-truck-btn').textContent = t.ftBtn;
+  document.getElementById('t-ft-title').textContent  = t.ftTitle;
+  document.getElementById('t-ft-desc').textContent   = t.ftDesc;
+  document.getElementById('t-ft-sec1').textContent   = t.ftSec1;
+  document.getElementById('t-ft-sec2').textContent   = t.ftSec2;
+  document.getElementById('t-ft-sec3').textContent   = t.ftSec3;
+  document.getElementById('t-ft-sec4').textContent   = t.ftSec4;
+  document.getElementById('t-ft-sec5').textContent   = t.ftSec5;
+  document.getElementById('t-ft-from-lbl').textContent = t.ftFromLbl;
+  document.getElementById('t-ft-to-lbl').textContent   = t.ftToLbl;
+  document.getElementById('t-ft-cancel').textContent   = t.ftCancel;
+  document.getElementById('t-ft-send').textContent     = t.ftSend;
+  const p = t.ftPh;
+  document.getElementById('ft-loc-country').placeholder = p.locCountry;
+  document.getElementById('ft-loc-city').placeholder    = p.locCity;
+  document.getElementById('ft-from-country').placeholder = p.fromCountry;
+  document.getElementById('ft-from-city').placeholder    = p.fromCity;
+  document.getElementById('ft-to-country').placeholder   = p.toCountry;
+  document.getElementById('ft-to-city').placeholder      = p.toCity;
+  document.getElementById('ft-truck-type').placeholder   = p.truck;
+  document.getElementById('ft-name').placeholder         = p.name;
+  document.getElementById('ft-phone').placeholder        = p.phone;
+  if (allLoads.length) { renderTable(filtered); updateCount(filtered.length); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Free Truck Modal
+═══════════════════════════════════════════════════════════════════════════ */
+function openFreeTruckModal() {
+  document.getElementById('free-truck-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeFreeTruckModal() {
+  document.getElementById('free-truck-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function handleModalClick(e) {
+  if (e.target === document.getElementById('free-truck-modal')) closeFreeTruckModal();
+}
+function submitFreeTruck() {
+  const t = TRANSLATIONS[currentLang];
+  const d = {
+    locCountry:  document.getElementById('ft-loc-country').value.trim(),
+    locCity:     document.getElementById('ft-loc-city').value.trim(),
+    date:        document.getElementById('ft-date').value,
+    fromCountry: document.getElementById('ft-from-country').value.trim(),
+    fromCity:    document.getElementById('ft-from-city').value.trim(),
+    toCountry:   document.getElementById('ft-to-country').value.trim(),
+    toCity:      document.getElementById('ft-to-city').value.trim(),
+    truck:       document.getElementById('ft-truck-type').value.trim(),
+    name:        document.getElementById('ft-name').value.trim(),
+    phone:       document.getElementById('ft-phone').value.trim(),
+  };
+  const subj = t.ftEmailSubject;
+  const body = t.ftEmailBody(d);
+  window.location.href =
+    `mailto:${RECIPIENTS}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+  closeFreeTruckModal();
+}
+
+// Zamknij modal klawiszem Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFreeTruckModal(); });
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Init
+═══════════════════════════════════════════════════════════════════════════ */
+window.EMBEDDED_DATA = {"updated": "08.05.2026 13:03", "loads": [{"loading": {"country": "AT", "postal": "8184", "city": "FEISTRITZ BEI ANGER", "lat": 47.2437521, "lon": 15.7027464}, "unloading": {"country": "CZ", "postal": "78371", "city": "OLOMOUC", "lat": 50.2758707, "lon": 17.1808923}, "cargo": "MAS-T5/3 A", "gmp": "TAK", "date_loading": "08.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "AT", "postal": "4860", "city": "LENZING", "lat": 47.9707119, "lon": 13.6128562}, "unloading": {"country": "CZ", "postal": "26032", "city": "RAKOVNIK", "lat": 50.1041136, "lon": 13.7310462}, "cargo": "SIARCZAN SODU, SODIUM SULPHATE A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "AT", "postal": "4860", "city": "LENZING", "lat": 47.9707119, "lon": 13.6128562}, "unloading": {"country": "CZ", "postal": "26032", "city": "RAKOVNIK", "lat": 50.1041136, "lon": 13.7310462}, "cargo": "SIARCZAN SODU, SODIUM SULPHATE A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "AT", "postal": "4860", "city": "LENZING", "lat": 47.9707119, "lon": 13.6128562}, "unloading": {"country": "CZ", "postal": "26032", "city": "RAKOVNIK", "lat": 50.1041136, "lon": 13.7310462}, "cargo": "SIARCZAN SODU, SODIUM SULPHATE A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "AT", "postal": "4860", "city": "LENZING", "lat": 47.9707119, "lon": 13.6128562}, "unloading": {"country": "DE", "postal": "79618", "city": "RHEINFELDEN", "lat": 47.5864375, "lon": 7.7692198}, "cargo": "SIARCZAN SODU, SODIUM SULPHATE A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "AT", "postal": "8184", "city": "FEISTRITZ BEI ANGER", "lat": 47.2437521, "lon": 15.7027464}, "unloading": {"country": "CZ", "postal": "78371", "city": "OLOMOUC", "lat": 50.2758707, "lon": 17.1808923}, "cargo": "MAS-T5/3 A", "gmp": "TAK", "date_loading": "13.05.2026", "date_unloading": "14.05.2026"}, {"loading": {"country": "AT", "postal": "4860", "city": "LENZING", "lat": 47.9707119, "lon": 13.6128562}, "unloading": {"country": "CZ", "postal": "33024", "city": "HERMANOVA HUT", "lat": 49.7139222, "lon": 13.0883565}, "cargo": "SODA CIĘŻKA B", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "AT", "postal": "8184", "city": "FEISTRITZ BEI ANGER", "lat": 47.2437521, "lon": 15.7027464}, "unloading": {"country": "CZ", "postal": "78371", "city": "OLOMOUC", "lat": 50.2758707, "lon": 17.1808923}, "cargo": "MAS-T5/3 A", "gmp": "TAK", "date_loading": "15.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "AT", "postal": "2320", "city": "SCHWECHAT", "lat": 48.1124544, "lon": 16.5258291}, "unloading": {"country": "DE", "postal": "29223", "city": "CELLE", "lat": 52.6338743, "lon": 10.0966033}, "cargo": "BH381MO - COPOLYMER A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "AT", "postal": "2320", "city": "SCHWECHAT", "lat": 48.1124544, "lon": 16.5258291}, "unloading": {"country": "DE", "postal": "29223", "city": "CELLE", "lat": 52.6338743, "lon": 10.0966033}, "cargo": "BH381MO - COPOLYMER A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "AT", "postal": "2320", "city": "SCHWECHAT", "lat": 48.1124544, "lon": 16.5258291}, "unloading": {"country": "DE", "postal": "29223", "city": "CELLE", "lat": 52.6338743, "lon": 10.0966033}, "cargo": "BH381MO - COPOLYMER A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "AT", "postal": "8184", "city": "FEISTRITZ BEI ANGER", "lat": 47.2437521, "lon": 15.7027464}, "unloading": {"country": "DE", "postal": "34346", "city": "HANNOVERSCH MUENDEN", "lat": 51.4308519, "lon": 9.6785833}, "cargo": "LUZENAC H100 A", "gmp": "", "date_loading": "19.05.2026", "date_unloading": "21.05.2026"}, {"loading": {"country": "AT", "postal": "8184", "city": "FEISTRITZ BEI ANGER", "lat": 47.2437521, "lon": 15.7027464}, "unloading": {"country": "CZ", "postal": "78371", "city": "OLOMOUC", "lat": 50.2758707, "lon": 17.1808923}, "cargo": "MAS-T5/3 A", "gmp": "TAK", "date_loading": "19.05.2026", "date_unloading": "20.05.2026"}, {"loading": {"country": "AT", "postal": "8184", "city": "FEISTRITZ BEI ANGER", "lat": 47.2437521, "lon": 15.7027464}, "unloading": {"country": "CZ", "postal": "78371", "city": "OLOMOUC", "lat": 50.2758707, "lon": 17.1808923}, "cargo": "MAS-T5/3 A", "gmp": "TAK", "date_loading": "21.05.2026", "date_unloading": "22.05.2026"}, {"loading": {"country": "AT", "postal": "8184", "city": "FEISTRITZ BEI ANGER", "lat": 47.2437521, "lon": 15.7027464}, "unloading": {"country": "CZ", "postal": "78371", "city": "OLOMOUC", "lat": 50.2758707, "lon": 17.1808923}, "cargo": "MAS-T5/3 A", "gmp": "TAK", "date_loading": "22.05.2026", "date_unloading": "25.05.2026"}, {"loading": {"country": "AT", "postal": "8184", "city": "FEISTRITZ BEI ANGER", "lat": 47.2437521, "lon": 15.7027464}, "unloading": {"country": "DE", "postal": "34346", "city": "HANNOVERSCH MUENDEN", "lat": 51.4308519, "lon": 9.6785833}, "cargo": "LUZENAC H100 A", "gmp": "", "date_loading": "26.05.2026", "date_unloading": "28.05.2026"}, {"loading": {"country": "AT", "postal": "8184", "city": "FEISTRITZ BEI ANGER", "lat": 47.2437521, "lon": 15.7027464}, "unloading": {"country": "CZ", "postal": "78371", "city": "OLOMOUC", "lat": 50.2758707, "lon": 17.1808923}, "cargo": "MAS-T5/3 A", "gmp": "TAK", "date_loading": "27.05.2026", "date_unloading": "28.05.2026"}, {"loading": {"country": "AT", "postal": "8184", "city": "FEISTRITZ BEI ANGER", "lat": 47.2437521, "lon": 15.7027464}, "unloading": {"country": "CZ", "postal": "78371", "city": "OLOMOUC", "lat": 50.2758707, "lon": 17.1808923}, "cargo": "MAS-T5/3 A", "gmp": "TAK", "date_loading": "28.05.2026", "date_unloading": "29.05.2026"}, {"loading": {"country": "AT", "postal": "2320", "city": "SCHWECHAT", "lat": 48.1124544, "lon": 16.5258291}, "unloading": {"country": "DE", "postal": "86529", "city": "SCHROBENHAUSEN", "lat": 48.571814, "lon": 11.2337026}, "cargo": "FSC65T30 C", "gmp": "", "date_loading": "29.05.2026", "date_unloading": "01.06.2026"}, {"loading": {"country": "AT", "postal": "8184", "city": "FEISTRITZ BEI ANGER", "lat": 47.2437521, "lon": 15.7027464}, "unloading": {"country": "DE", "postal": "34346", "city": "HANNOVERSCH MUENDEN", "lat": 51.4308519, "lon": 9.6785833}, "cargo": "LUZENAC H100 A", "gmp": "", "date_loading": "02.06.2026", "date_unloading": "04.06.2026"}, {"loading": {"country": "AT", "postal": "2320", "city": "SCHWECHAT", "lat": 48.1124544, "lon": 16.5258291}, "unloading": {"country": "DE", "postal": "86529", "city": "SCHROBENHAUSEN", "lat": 48.571814, "lon": 11.2337026}, "cargo": "FSC65T30 C", "gmp": "", "date_loading": "05.06.2026", "date_unloading": "08.06.2026"}, {"loading": {"country": "BE", "postal": "9130", "city": "KALLO", "lat": 51.2519515, "lon": 4.27803}, "unloading": {"country": "DE", "postal": "95448", "city": "BAYREUTH", "lat": 49.9305359, "lon": 11.6149724}, "cargo": "HPP MF650Y PWD BT (PMC) A", "gmp": "", "date_loading": "08.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "BE", "postal": "9130", "city": "KALLO", "lat": 51.2519515, "lon": 4.27803}, "unloading": {"country": "DE", "postal": "95448", "city": "BAYREUTH", "lat": 49.9305359, "lon": 11.6149724}, "cargo": "HPP MF650Y PWD BT (PMC) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "BE", "postal": "7190", "city": "MARCHE-LEZ-ECAUSSINNES", "lat": 50.5465788, "lon": 4.1818449}, "unloading": {"country": "DE", "postal": "84163", "city": "MARKLKOFEN", "lat": 48.5560905, "lon": 12.5656402}, "cargo": "9099 BULK TOTAL PPH - POLYPROPYLENE A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "BE", "postal": "9130", "city": "KALLO", "lat": 51.2519515, "lon": 4.27803}, "unloading": {"country": "DE", "postal": "91601", "city": "DOMBUHL", "lat": 49.2568379, "lon": 10.2970387}, "cargo": "M4707AP S02 A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "BE", "postal": "9130", "city": "KALLO", "lat": 51.2519515, "lon": 4.27803}, "unloading": {"country": "PL", "postal": "85-147", "city": "BYDGOSZCZ", "lat": 53.0996701, "lon": 18.0292484}, "cargo": "BH345MO ( POLIPROPYLEN PP) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "BE", "postal": "9130", "city": "KALLO", "lat": 51.2519515, "lon": 4.27803}, "unloading": {"country": "DE", "postal": "08223", "city": "FALKENSTEIN", "lat": 50.4417817, "lon": 12.3562524}, "cargo": "AXELERON™ GP 6059 A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "BE", "postal": "2440", "city": "GEEL", "lat": 51.1657703, "lon": 4.9985374}, "unloading": {"country": "PL", "postal": "64320", "city": "BUK", "lat": 52.3553411, "lon": 16.5393216}, "cargo": "TUB350-HM - PP Copolymer A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "BE", "postal": "2440", "city": "GEEL", "lat": 51.1657703, "lon": 4.9985374}, "unloading": {"country": "PL", "postal": "64320", "city": "BUK", "lat": 52.3553411, "lon": 16.5393216}, "cargo": "TUB350-HM - PP Copolymer A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "BE", "postal": "2440", "city": "GEEL", "lat": 51.1657703, "lon": 4.9985374}, "unloading": {"country": "PL", "postal": "84110", "city": "KROKOWA", "lat": 54.7859588, "lon": 18.1233503}, "cargo": "TUB 433 - PP COPOLYMER A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "BE", "postal": "2440", "city": "GEEL", "lat": 51.1657703, "lon": 4.9985374}, "unloading": {"country": "PL", "postal": "84110", "city": "KROKOWA", "lat": 54.7859588, "lon": 18.1233503}, "cargo": "TUB 433 - PP COPOLYMER A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "BE", "postal": "2430", "city": "LAAKDAL", "lat": 51.0945115, "lon": 5.0346792}, "unloading": {"country": "PL", "postal": "84110", "city": "KROKOWA", "lat": 54.7859588, "lon": 18.1233503}, "cargo": "400-GA05 A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "BE", "postal": "3583", "city": "BERINGEN", "lat": 51.0475454, "lon": 5.1612993}, "unloading": {"country": "DE", "postal": "95126", "city": "SCHWARZENBACH/SAALE", "lat": 50.2032508, "lon": 11.9350537}, "cargo": "HL712FB - POLIPROPYLENE (PP) A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "BE", "postal": "2430", "city": "LAAKDAL", "lat": 51.0945115, "lon": 5.0346792}, "unloading": {"country": "SE", "postal": "27236", "city": "SIMRISHAMN", "lat": 55.5508088, "lon": 14.3437421}, "cargo": "EG107HP-9591 A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "BE", "postal": "7181", "city": "FELUY", "lat": 50.5625055, "lon": 4.2507809}, "unloading": {"country": "DE", "postal": "31515", "city": "WUNSTORF", "lat": 52.4372277, "lon": 9.3929326}, "cargo": "1060 BULK PPH A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "BE", "postal": "9130", "city": "KALLO", "lat": 51.2519515, "lon": 4.27803}, "unloading": {"country": "CZ", "postal": "28151", "city": "VELKY OSEK", "lat": 50.0995299, "lon": 15.187909}, "cargo": "BE677AI A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "20.05.2026"}, {"loading": {"country": "BE", "postal": "9130", "city": "KALLO", "lat": 51.2519515, "lon": 4.27803}, "unloading": {"country": "DE", "postal": "95448", "city": "BAYREUTH", "lat": 49.9305359, "lon": 11.6149724}, "cargo": "HPP MF650Y PWD BT (PMC) A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "BE", "postal": "7181", "city": "FELUY", "lat": 50.5625055, "lon": 4.2507809}, "unloading": {"country": "DE", "postal": "84163", "city": "MARKLKOFEN", "lat": 48.5560905, "lon": 12.5656402}, "cargo": "9099 BULK TOTAL PPH - POLYPROPYLENE A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "20.05.2026"}, {"loading": {"country": "CZ", "postal": "43670", "city": "LITVINOV", "lat": 50.6009532, "lon": 13.6110485}, "unloading": {"country": "DE", "postal": "39448", "city": "WESTEREGELN", "lat": 51.9444112, "lon": 11.376088}, "cargo": "Polyetylen-HD LITEN PL 60-006_1 A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "CZ", "postal": "43670", "city": "LITVINOV (OBRNICE)", "lat": null, "lon": null}, "unloading": {"country": "PL", "postal": "96-515", "city": "TERESIN", "lat": 52.2052296, "lon": 20.4192892}, "cargo": "MOSTEN", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "CZ", "postal": "43670", "city": "LITVÍNOV", "lat": 50.6009532, "lon": 13.6110485}, "unloading": {"country": "PL", "postal": "41-100", "city": "SIEMIANOWICE ŚLASKIE", "lat": 50.3114974, "lon": 19.0221201}, "cargo": "MOSTEN TB 003 - POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "CZ", "postal": "43670", "city": "LITVÍNOV", "lat": 50.6009532, "lon": 13.6110485}, "unloading": {"country": "PL", "postal": "41-100", "city": "SIEMIANOWICE ŚLASKIE", "lat": 50.3114974, "lon": 19.0221201}, "cargo": "MOSTEN TB 003 - POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "14.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "29402", "city": "KNEZMOST", "lat": 50.4901971, "lon": 15.0556774}, "cargo": "LUPOLEN 4261AG - POLIETYLEN (PE) A", "gmp": "", "date_loading": "08.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "43533", "city": "LOUKA U LITVINOVA", "lat": 50.5892211, "lon": 13.6345327}, "cargo": "MOPLEN HP640J - POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "08.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "DE", "postal": "84489", "city": "BURGHAUSEN", "lat": 48.163337, "lon": 12.8194982}, "unloading": {"country": "DK", "postal": "8960", "city": "RANDERS", "lat": 56.4421687, "lon": 10.1130392}, "cargo": "RG466MO POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "08.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "50354", "city": "HURTH", "lat": 50.8742561, "lon": 6.8497567}, "unloading": {"country": "CZ", "postal": "47090", "city": "CESKA LIPA", "lat": 50.6865452, "lon": 14.5372974}, "cargo": "Hostacom HBC 2171D - POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "08.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "46303", "city": "LIBEREC", "lat": 50.7917088, "lon": 15.0290748}, "cargo": "LUPOLEN 4261AG - POLIETYLEN (PE) A", "gmp": "", "date_loading": "08.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "DE", "postal": "41540", "city": "DORMAGEN", "lat": 51.0779998, "lon": 6.7992187}, "unloading": {"country": "DE", "postal": "06184", "city": "KABELSKETAL", "lat": 51.4464282, "lon": 12.0959783}, "cargo": "400-CA25-000-1 - POLYPROPYLENE RESIN A", "gmp": "", "date_loading": "08.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "DE", "postal": "50998", "city": "KOLN", "lat": 50.938361, "lon": 6.959974}, "unloading": {"country": "IT", "postal": "39055", "city": "LAIVES", "lat": 46.4388472, "lon": 11.3437352}, "cargo": "Lupolen GX 5038 A", "gmp": "", "date_loading": "08.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "CZ", "postal": "41901", "city": "DUCHCOV", "lat": 50.6191179, "lon": 13.7434375}, "cargo": "SODA CIĘŻKA B", "gmp": "", "date_loading": "08.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "29402", "city": "KNEZMOST", "lat": 50.4901971, "lon": 15.0556774}, "cargo": "LUPOLEN 4261AG - POLIETYLEN (PE) A", "gmp": "", "date_loading": "08.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "CZ", "postal": "41703", "city": "DUBI", "lat": 50.6637902, "lon": 13.7915131}, "cargo": "SODA KALCYNOWANA LEKKA B", "gmp": "", "date_loading": "09.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "DE", "postal": "01987", "city": "SCHWARZHEIDE", "lat": 51.4873729, "lon": 13.8360027}, "cargo": "SODA OCZYSZCZONA PRZEMYSŁOWA", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "84489", "city": "BURGHAUSEN", "lat": 48.163337, "lon": 12.8194982}, "unloading": {"country": "DE", "postal": "31224", "city": "PEINE", "lat": 52.3225656, "lon": 10.273449}, "cargo": "HG475FB (Plastic) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "84489", "city": "BURGHAUSEN", "lat": 48.163337, "lon": 12.8194982}, "unloading": {"country": "DE", "postal": "31224", "city": "PEINE", "lat": 52.3225656, "lon": 10.273449}, "cargo": "HG475FB (Plastic) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "85126", "city": "MUNCHSMUNSTER", "lat": 48.7677231, "lon": 11.6712587}, "unloading": {"country": "AT", "postal": "3830", "city": "WAIDHOFEN", "lat": 48.8152922, "lon": 15.2827625}, "cargo": "HS ACP 6541A A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "46303", "city": "LIBEREC", "lat": 50.7917088, "lon": 15.0290748}, "cargo": "LUPOLEN 4261AG - POLIETYLEN (PE) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "41540", "city": "DORMAGEN", "lat": 51.0779998, "lon": 6.7992187}, "unloading": {"country": "DE", "postal": "06184", "city": "KABELSKETAL", "lat": 51.4464282, "lon": 12.0959783}, "cargo": "19N430-01 Bulk - LDPE: 19 N 430 A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "85126", "city": "MUNCHSMUNSTER", "lat": 48.7677231, "lon": 11.6712587}, "unloading": {"country": "CZ", "postal": "73801", "city": "FRYDEK-MISTEK", "lat": 49.6794637, "lon": 18.3564582}, "cargo": "HOSTALEN ACP 6541A - POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "AT", "postal": "4540", "city": "BAD HALL", "lat": 48.0337903, "lon": 14.2067354}, "cargo": "HOSTALEN CRP 100 - POLIETYLEN (PE) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "06258", "city": "SCHKOPAU", "lat": 51.3872303, "lon": 12.0919748}, "unloading": {"country": "DE", "postal": "17248", "city": "RECHLIN", "lat": 53.3296067, "lon": 12.76476}, "cargo": "DOWLEX?? 2342M A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "DE", "postal": "02788", "city": "ZITTAU", "lat": 50.9554857, "lon": 14.8564924}, "cargo": "SODA KALCYNOWANA LEKKA B", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "DE", "postal": "95448", "city": "BAYREUTH", "lat": 49.9305359, "lon": 11.6149724}, "cargo": "MOPLEN EP600V A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "84489", "city": "BURGHAUSEN", "lat": 48.163337, "lon": 12.8194982}, "unloading": {"country": "PL", "postal": "84220", "city": "STRZEBIELINO", "lat": 54.5715522, "lon": 18.0397823}, "cargo": "HD234CF - homopolymer A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "84489", "city": "BURGHAUSEN", "lat": 48.163337, "lon": 12.8194982}, "unloading": {"country": "NL", "postal": "7336", "city": "APELDOORN", "lat": 52.2156457, "lon": 5.9639485}, "cargo": "SW HD601CF BLK BULK - POLYPROPYLENE A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "41540", "city": "DORMAGEN", "lat": 51.0779998, "lon": 6.7992187}, "unloading": {"country": "DE", "postal": "09600", "city": "WEISSENBORN", "lat": 50.8705494, "lon": 13.3832592}, "cargo": "LDPE: 23L430 BULK A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "DE", "postal": "98544", "city": "ZELLA-MEHLIS", "lat": 50.6500902, "lon": 10.6391984}, "cargo": "Hostalen 4731B- POLYETHYLEN (PE) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "41540", "city": "DORMAGEN", "lat": 51.0779998, "lon": 6.7992187}, "unloading": {"country": "DE", "postal": "06184", "city": "KABELSKETAL", "lat": 51.4464282, "lon": 12.0959783}, "cargo": "19N430-01 Bulk - LDPE: 19 N 430 A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "86368", "city": "GERSTHOFEN", "lat": 48.4317341, "lon": 10.8214566}, "unloading": {"country": "DE", "postal": "98701", "city": "GROSSBREITENBACH", "lat": 50.5884123, "lon": 10.9990206}, "cargo": "Polyclear® PET T94N A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "84489", "city": "BURGHAUSEN", "lat": 48.163337, "lon": 12.8194982}, "unloading": {"country": "PL", "postal": "94-406", "city": "ŁÓDŹ", "lat": 51.7370639, "lon": 19.3638874}, "cargo": "HE370FB A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "14.05.2026"}, {"loading": {"country": "DE", "postal": "92271", "city": "FREIHUNG", "lat": 49.6025439, "lon": 11.8874973}, "unloading": {"country": "PL", "postal": "26-052", "city": "SITKOWKA-NOWINY", "lat": 50.8185469, "lon": 20.5278273}, "cargo": "PIASEK KWARCOWY - SAND A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "AT", "postal": "4550", "city": "KREMSMÜNSTER", "lat": 48.0534391, "lon": 14.1301639}, "cargo": "MOPLEN HP400H - POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "DE", "postal": "01987", "city": "SCHWARZHEIDE", "lat": 51.4873729, "lon": 13.8360027}, "cargo": "SODA OCZYSZCZONA PRZEMYSŁOWA", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "DE", "postal": "85126", "city": "MUNCHSMUNSTER", "lat": 48.7677231, "lon": 11.6712587}, "unloading": {"country": "PL", "postal": "58-100", "city": "ŚWIDNICA", "lat": 50.8386454, "lon": 16.4826203}, "cargo": "HOSTALEN GX 4080- POLIETYLEN (PE) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "22851", "city": "NORDERSTEDT", "lat": 53.7024451, "lon": 10.041447}, "unloading": {"country": "DE", "postal": "52441", "city": "LINNICH", "lat": 50.9797163, "lon": 6.2826605}, "cargo": "SF313HMS-07 C", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "84489", "city": "BURGHAUSEN", "lat": 48.163337, "lon": 12.8194982}, "unloading": {"country": "DE", "postal": "37671", "city": "HÖXTER", "lat": 51.7865686, "lon": 9.3446713}, "cargo": "HD234CF - homopolymer A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "06258", "city": "SCHKOPAU", "lat": 51.3872303, "lon": 12.0919748}, "unloading": {"country": "DE", "postal": "17248", "city": "RECHLIN", "lat": 53.3296067, "lon": 12.76476}, "cargo": "DOWLEX?? 2342M A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "43533", "city": "LOUKA U LITVINOVA", "lat": 50.5892211, "lon": 13.6345327}, "cargo": "MOPLEN HP640J - POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "14.05.2026"}, {"loading": {"country": "DE", "postal": "86462", "city": "LANGWEID-FORET", "lat": 48.4682427, "lon": 10.8637345}, "unloading": {"country": "AT", "postal": "4550", "city": "KREMSMUNSTER", "lat": 48.0534391, "lon": 14.1301639}, "cargo": "RAMAPET L1 A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "41540", "city": "DORMAGEN", "lat": 51.0779998, "lon": 6.7992187}, "unloading": {"country": "DE", "postal": "06184", "city": "KABELSKETAL", "lat": 51.4464282, "lon": 12.0959783}, "cargo": "400-CA25-000-1 - POLYPROPYLENE RESIN A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "DE", "postal": "95448", "city": "BAYREUTH", "lat": 49.9305359, "lon": 11.6149724}, "cargo": "MOPLEN EP600V A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "DE", "postal": "95448", "city": "BAYREUTH", "lat": 49.9305359, "lon": 11.6149724}, "cargo": "Moplen EP500V C", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "85126", "city": "MUNCHSMUNSTER", "lat": 48.7677231, "lon": 11.6712587}, "unloading": {"country": "AT", "postal": "3830", "city": "WAIDHOFEN", "lat": 48.8152922, "lon": 15.2827625}, "cargo": "HOSTALEN ACP 5331 A - POLIETYLEN (PE) A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "84489", "city": "BURGHAUSEN", "lat": 48.163337, "lon": 12.8194982}, "unloading": {"country": "PL", "postal": "84220", "city": "STRZEBIELINO", "lat": 54.5715522, "lon": 18.0397823}, "cargo": "SW HD601CF BLK BULK - POLYPROPYLENE A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "14.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "DE", "postal": "98544", "city": "ZELLA-MEHLIS", "lat": 50.6500902, "lon": 10.6391984}, "cargo": "Hostalen 4731B- POLYETHYLEN (PE) A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "50354", "city": "HURTH", "lat": 50.8742561, "lon": 6.8497567}, "unloading": {"country": "SK", "postal": "90501", "city": "SENICA", "lat": 48.6825069, "lon": 17.367277}, "cargo": "HOSTACOM M2U02 - POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "14.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "29402", "city": "KNEZMOST", "lat": 50.4901971, "lon": 15.0556774}, "cargo": "LUPOLEN 4261AG - POLIETYLEN (PE) A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "14.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "DE", "postal": "91555", "city": "FEUCHTWANGEN", "lat": 49.1726337, "lon": 10.3340151}, "cargo": "SODA OCZYSZCZONA PASZOWA", "gmp": "TAK", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "DE", "postal": "01987", "city": "SCHWARZHEIDE", "lat": 51.4873729, "lon": 13.8360027}, "cargo": "SODA OCZYSZCZONA PRZEMYSŁOWA", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "85126", "city": "MÜNCHSMÜNSTER", "lat": 48.7651823, "lon": 11.6760913}, "unloading": {"country": "IT", "postal": "31038", "city": "PADERNELLO DI PAESE", "lat": 45.6838286, "lon": 12.1237529}, "cargo": "HOSTALEN ACP 5331 A - POLIETYLEN (PE) A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "46303", "city": "LIBEREC", "lat": 50.7917088, "lon": 15.0290748}, "cargo": "LUPOLEN 4261AG - POLIETYLEN (PE) A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "DE", "postal": "41540", "city": "DORMAGEN", "lat": 51.0779998, "lon": 6.7992187}, "unloading": {"country": "DE", "postal": "06184", "city": "KABELSKETAL", "lat": 51.4464282, "lon": 12.0959783}, "cargo": "19N430-01 Bulk - LDPE: 19 N 430 A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "29402", "city": "KNEZMOST", "lat": 50.4901971, "lon": 15.0556774}, "cargo": "LUPOLEN 4261AG - POLIETYLEN (PE) A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "29402", "city": "KNEZMOST", "lat": 50.4901971, "lon": 15.0556774}, "cargo": "LUPOLEN 4261AG - POLIETYLEN (PE) A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "DE", "postal": "84489", "city": "BURGHAUSEN", "lat": 48.163337, "lon": 12.8194982}, "unloading": {"country": "DE", "postal": "96215", "city": "LICHTENFELS", "lat": 50.094678, "lon": 11.1435732}, "cargo": "SA233CF A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "DE", "postal": "34123", "city": "KASSEL", "lat": 51.2950571, "lon": 9.5247458}, "cargo": "SODA OCZYSZCZONA PRZEMYSŁOWA", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "DE", "postal": "95448", "city": "BAYREUTH", "lat": 49.9305359, "lon": 11.6149724}, "cargo": "Moplen EP500V C", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "DE", "postal": "95448", "city": "BAYREUTH", "lat": 49.9305359, "lon": 11.6149724}, "cargo": "MOPLEN EP600V A", "gmp": "", "date_loading": "14.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "DE", "postal": "84489", "city": "BURGHAUSEN", "lat": 48.163337, "lon": 12.8194982}, "unloading": {"country": "DE", "postal": "96215", "city": "LICHTENFELS", "lat": 50.094678, "lon": 11.1435732}, "cargo": "SA233CF A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "DE", "postal": "06258", "city": "SCHKOPAU", "lat": 51.3872303, "lon": 12.0919748}, "unloading": {"country": "DE", "postal": "17248", "city": "RECHLIN", "lat": 53.3296067, "lon": 12.76476}, "cargo": "DOWLEX?? 2342M A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "DE", "postal": "02788", "city": "ZITTAU", "lat": 50.9554857, "lon": 14.8564924}, "cargo": "SODA KALCYNOWANA LEKKA B", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "DE", "postal": "02694", "city": "GROSSDUBRAU", "lat": 51.2772393, "lon": 14.5348378}, "cargo": "SODA KALCYNOWANA LEKKA B", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "DE", "postal": "01844", "city": "NEUSTADT/SACHSEN", "lat": 51.0324257, "lon": 14.2241076}, "cargo": "Hostalen CRP 100 BLACK - POLIETYLEN (PE) A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "DE", "postal": "84489", "city": "BURGHAUSEN", "lat": 48.163337, "lon": 12.8194982}, "unloading": {"country": "DK", "postal": "8960", "city": "RANDERS", "lat": 56.4421687, "lon": 10.1130392}, "cargo": "RG466MO POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "DE", "postal": "34123", "city": "KASSEL", "lat": 51.2950571, "lon": 9.5247458}, "cargo": "SODA OCZYSZCZONA PRZEMYSŁOWA", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "DE", "postal": "06258", "city": "SCHKOPAU", "lat": 51.3872303, "lon": 12.0919748}, "unloading": {"country": "DE", "postal": "17248", "city": "RECHLIN", "lat": 53.3296067, "lon": 12.76476}, "cargo": "DOWLEX?? 2342M A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "DE", "postal": "06258", "city": "SCHKOPAU", "lat": 51.3872303, "lon": 12.0919748}, "unloading": {"country": "DE", "postal": "17248", "city": "RECHLIN", "lat": 53.3296067, "lon": 12.76476}, "cargo": "DOWLEX?? 2342M A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "DE", "postal": "06237", "city": "LEUNA", "lat": 51.3262436, "lon": 12.0782869}, "unloading": {"country": "PL", "postal": "55-330", "city": "MIĘKINIA", "lat": 51.1763534, "lon": 16.8006235}, "cargo": "DOW LDPE 150E A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "DE", "postal": "02788", "city": "ZITTAU", "lat": 50.9554857, "lon": 14.8564924}, "cargo": "SODA KALCYNOWANA LEKKA B", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "46303", "city": "LIBEREC", "lat": 50.7917088, "lon": 15.0290748}, "cargo": "LUPOLEN 4261AG - POLIETYLEN (PE) A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "20.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "29402", "city": "KNEZMOST", "lat": 50.4901971, "lon": 15.0556774}, "cargo": "LUPOLEN 4261AG - POLIETYLEN (PE) A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "20.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "DE", "postal": "98544", "city": "ZELLA-MEHLIS", "lat": 50.6500902, "lon": 10.6391984}, "cargo": "Hostalen 4731B- POLYETHYLEN (PE) A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "DE", "postal": "06258", "city": "SCHKOPAU", "lat": 51.3872303, "lon": 12.0919748}, "unloading": {"country": "DE", "postal": "17248", "city": "RECHLIN", "lat": 53.3296067, "lon": 12.76476}, "cargo": "DOWLEX?? 2342M A", "gmp": "", "date_loading": "19.05.2026", "date_unloading": "20.05.2026"}, {"loading": {"country": "DE", "postal": "50997", "city": "KOLN", "lat": 50.8652998, "lon": 6.9459042}, "unloading": {"country": "CZ", "postal": "29402", "city": "KNEZMOST", "lat": 50.4901971, "lon": 15.0556774}, "cargo": "LUPOLEN 4261AG - POLIETYLEN (PE) A", "gmp": "", "date_loading": "19.05.2026", "date_unloading": "21.05.2026"}, {"loading": {"country": "DE", "postal": "50354", "city": "HURTH", "lat": 50.8742561, "lon": 6.8497567}, "unloading": {"country": "DE", "postal": "99869", "city": "DREI GLEICHEN", "lat": 50.8992469, "lon": 10.8346367}, "cargo": "MOPLEN HP500N - POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "19.05.2026", "date_unloading": "20.05.2026"}, {"loading": {"country": "DE", "postal": "06258", "city": "SCHKOPAU", "lat": 51.3872303, "lon": 12.0919748}, "unloading": {"country": "DE", "postal": "17248", "city": "RECHLIN", "lat": 53.3296067, "lon": 12.76476}, "cargo": "DOWLEX?? 2342M A", "gmp": "", "date_loading": "20.05.2026", "date_unloading": "21.05.2026"}, {"loading": {"country": "DE", "postal": "06237", "city": "LEUNA", "lat": 51.3262436, "lon": 12.0782869}, "unloading": {"country": "PL", "postal": "55-330", "city": "MIĘKINIA", "lat": 51.1763534, "lon": 16.8006235}, "cargo": "DOW LDPE 150E A", "gmp": "", "date_loading": "20.05.2026", "date_unloading": "21.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "CZ", "postal": "47313", "city": "NOVY BOR", "lat": 50.757878, "lon": 14.5554953}, "cargo": "SODA CIĘŻKA B", "gmp": "", "date_loading": "21.05.2026", "date_unloading": "23.05.2026"}, {"loading": {"country": "DE", "postal": "39418", "city": "STASSFURT", "lat": 51.8426649, "lon": 11.5946614}, "unloading": {"country": "DE", "postal": "01987", "city": "SCHWARZHEIDE", "lat": 51.4873729, "lon": 13.8360027}, "cargo": "SODA OCZYSZCZONA PRZEMYSŁOWA", "gmp": "", "date_loading": "21.05.2026", "date_unloading": "22.05.2026"}, {"loading": {"country": "DE", "postal": "85126", "city": "MUNCHSMUNSTER", "lat": 48.7677231, "lon": 11.6712587}, "unloading": {"country": "CZ", "postal": "73801", "city": "FRYDEK-MISTEK", "lat": 49.6794637, "lon": 18.3564582}, "cargo": "HOSTALEN ACP 6541A - POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "22.05.2026", "date_unloading": "26.05.2026"}, {"loading": {"country": "DE", "postal": "85126", "city": "MUNCHSMUNSTER", "lat": 48.7677231, "lon": 11.6712587}, "unloading": {"country": "PL", "postal": "58-100", "city": "ŚWIDNICA", "lat": 50.8386454, "lon": 16.4826203}, "cargo": "HOSTALEN GX 4080- POLIETYLEN (PE) A", "gmp": "", "date_loading": "22.05.2026", "date_unloading": "26.05.2026"}, {"loading": {"country": "FR", "postal": "67930", "city": "BEINHEIM", "lat": 48.8642117, "lon": 8.0936943}, "unloading": {"country": "CZ", "postal": "41108", "city": "STETI", "lat": 50.4651336, "lon": 14.3820412}, "cargo": "HI-CAT C483A - skrobia B", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "FR", "postal": "62136", "city": "LESTREM", "lat": 50.6216212, "lon": 2.6857534}, "unloading": {"country": "CZ", "postal": "69301", "city": "HUSTOPECE", "lat": 48.9384221, "lon": 16.7252694}, "cargo": "MAIZE STARCH N-HV - SKROBIA KUKURYDZIANA A", "gmp": "TAK", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "FR", "postal": "80800", "city": "VECQUEMONT", "lat": 49.8996135, "lon": 2.4511121}, "unloading": {"country": "CZ", "postal": "41108", "city": "STETI", "lat": 50.4651336, "lon": 14.3820412}, "cargo": "HI-CAT 1216 A B", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "FR", "postal": "67930", "city": "BEINHEIM", "lat": 48.8642117, "lon": 8.0936943}, "unloading": {"country": "PL", "postal": "43-100", "city": "TYCHY", "lat": 50.1264981, "lon": 19.0067846}, "cargo": "SKROBIA - STARCH N0350 A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "FR", "postal": "67930", "city": "BEINHEIM", "lat": 48.8642117, "lon": 8.0936943}, "unloading": {"country": "PL", "postal": "96500", "city": "SOCHACZEW", "lat": 52.2294338, "lon": 20.2498334}, "cargo": "VITEN VITAL WHEAT GLUTEN FEED BULK A", "gmp": "TAK", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "FR", "postal": "80800", "city": "VECQUEMONT", "lat": 49.8996135, "lon": 2.4511121}, "unloading": {"country": "CZ", "postal": "41108", "city": "STETI", "lat": 50.4651336, "lon": 14.3820412}, "cargo": "HI-CAT 1216 A B", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "FR", "postal": "67930", "city": "BEINHEIM", "lat": 48.8642117, "lon": 8.0936943}, "unloading": {"country": "DE", "postal": "26316", "city": "VAREL", "lat": 53.3876151, "lon": 8.1164014}, "cargo": "SKROBIA - WHEAT STARCH – AMIDON A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "NL", "postal": "4782", "city": "MOERDIJK", "lat": 51.7030216, "lon": 4.6256771}, "unloading": {"country": "DE", "postal": "01936", "city": "SCHWEPNITZ", "lat": 51.3296398, "lon": 13.9580134}, "cargo": "HIFAX CA 10 A (PP) A", "gmp": "", "date_loading": "08.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "NL", "postal": "4782", "city": "MOERDIJK", "lat": 51.7030216, "lon": 4.6256771}, "unloading": {"country": "DE", "postal": "01936", "city": "SCHWEPNITZ", "lat": 51.3296398, "lon": 13.9580134}, "cargo": "ADFLEX X 100 G A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "NL", "postal": "4782", "city": "MOERDIJK", "lat": 51.7030216, "lon": 4.6256771}, "unloading": {"country": "DE", "postal": "01936", "city": "SCHWEPNITZ", "lat": 51.3296398, "lon": 13.9580134}, "cargo": "ADFLEX X 100 G A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "NL", "postal": "4542", "city": "HOEK", "lat": 51.3093842, "lon": 3.7789931}, "unloading": {"country": "DE", "postal": "98673", "city": "EISFELD", "lat": 50.4269914, "lon": 10.9075046}, "cargo": "DOWLEX 2645 A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "12.05.2026"}, {"loading": {"country": "NL", "postal": "1013", "city": "AMSTERDAM", "lat": 52.3730796, "lon": 4.8924534}, "unloading": {"country": "DE", "postal": "01936", "city": "SCHWEPNITZ", "lat": 51.3296398, "lon": 13.9580134}, "cargo": "ADDforce FR S3 B", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "NL", "postal": "4782", "city": "MOERDIJK", "lat": 51.7030216, "lon": 4.6256771}, "unloading": {"country": "DE", "postal": "01936", "city": "SCHWEPNITZ", "lat": 51.3296398, "lon": 13.9580134}, "cargo": "ADFLEX X 100 G A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "NL", "postal": "4782", "city": "MOERDIJK", "lat": 51.7030216, "lon": 4.6256771}, "unloading": {"country": "DE", "postal": "01936", "city": "SCHWEPNITZ", "lat": 51.3296398, "lon": 13.9580134}, "cargo": "HIFAX CA 10 A (PP) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "NL", "postal": "4782", "city": "MOERDIJK", "lat": 51.7030216, "lon": 4.6256771}, "unloading": {"country": "DE", "postal": "01936", "city": "SCHWEPNITZ", "lat": 51.3296398, "lon": 13.9580134}, "cargo": "HIFAX CA 60 - polypropylene (pp) A", "gmp": "", "date_loading": "11.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "NL", "postal": "4782", "city": "MOERDIJK", "lat": 51.7030216, "lon": 4.6256771}, "unloading": {"country": "DE", "postal": "95448", "city": "BAYREUTH", "lat": 49.9305359, "lon": 11.6149724}, "cargo": "HIFAX X 1956 A A", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "NL", "postal": "4782", "city": "MOERDIJK", "lat": 51.7030216, "lon": 4.6256771}, "unloading": {"country": "DE", "postal": "01936", "city": "SCHWEPNITZ", "lat": 51.3296398, "lon": 13.9580134}, "cargo": "ADFLEX X 100 G A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "NL", "postal": "4782", "city": "MOERDIJK", "lat": 51.7030216, "lon": 4.6256771}, "unloading": {"country": "DE", "postal": "01936", "city": "SCHWEPNITZ", "lat": 51.3296398, "lon": 13.9580134}, "cargo": "HIFAX CA 10 A (PP) A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "NL", "postal": "4782", "city": "MOERDIJK", "lat": 51.7030216, "lon": 4.6256771}, "unloading": {"country": "DE", "postal": "01936", "city": "SCHWEPNITZ", "lat": 51.3296398, "lon": 13.9580134}, "cargo": "HIFAX CA 60 - polypropylene (pp) A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "PL", "postal": "88-101", "city": "INOWROCŁAW", "lat": 52.7460751, "lon": 18.2833616}, "unloading": {"country": "PL", "postal": "14-230", "city": "ZALEWO", "lat": 53.7821641, "lon": 19.6123175}, "cargo": "SODA OCZYSZCZONA PASZOWA", "gmp": "TAK", "date_loading": "09.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "PL", "postal": "88-101", "city": "INOWROCŁAW", "lat": 52.7460751, "lon": 18.2833616}, "unloading": {"country": "PL", "postal": "62-065", "city": "GRODZISK WILKOPOLSKI", "lat": null, "lon": null}, "cargo": "SODA OCZYSZCZONA PASZOWA", "gmp": "TAK", "date_loading": "10.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "PL", "postal": "88-101", "city": "INOWROCŁAW", "lat": 52.7460751, "lon": 18.2833616}, "unloading": {"country": "PL", "postal": "99-100", "city": "ŁĘCZYCA", "lat": 52.0603764, "lon": 19.1711479}, "cargo": "SODA OCZYSZCZONA PASZOWA", "gmp": "TAK", "date_loading": "10.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "PL", "postal": "88-101", "city": "INOWROCŁAW", "lat": 52.7460751, "lon": 18.2833616}, "unloading": {"country": "PL", "postal": "64541", "city": "SĘKOWO", "lat": 52.6419547, "lon": 19.7422876}, "cargo": "SODA OCZYSZCZONA PASZOWA", "gmp": "TAK", "date_loading": "10.05.2026", "date_unloading": "11.05.2026"}, {"loading": {"country": "PL", "postal": "88-101", "city": "INOWROCLAW", "lat": 52.7460751, "lon": 18.2833616}, "unloading": {"country": "PL", "postal": "05825", "city": "GRODZISK MAZOWIECKI", "lat": 52.1077544, "lon": 20.6273589}, "cargo": "SODA OCZYSZCZONA PASZOWA", "gmp": "TAK", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "PL", "postal": "88-306", "city": "DĄBROWA", "lat": 52.7704218, "lon": 17.9422181}, "unloading": {"country": "PL", "postal": "32-005", "city": "NIEPOŁOMICE", "lat": 50.0280947, "lon": 20.2086154}, "cargo": "DROŻDŻE PIWOWARSKIE B", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "PL", "postal": "80-550", "city": "GDAŃSK", "lat": 54.3793434, "lon": 18.6680507}, "unloading": {"country": "PL", "postal": "62-600", "city": "KOŁO", "lat": 52.2109821, "lon": 18.6432522}, "cargo": "SJENIT NEFELINOWY A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "PL", "postal": "62-830", "city": "ZBIERSK", "lat": 51.9544145, "lon": 18.1225176}, "unloading": {"country": "CZ", "postal": "76701", "city": "KROMERIZ", "lat": 49.288593, "lon": 17.3902111}, "cargo": "GLUTEN PSZENNY - NATIVE WHEAT GLUTEN A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "PL", "postal": "09-411", "city": "PŁOCK", "lat": 52.6111315, "lon": 19.6585045}, "unloading": {"country": "PL", "postal": "41-100", "city": "SIEMIANOWICE ŚLĄSKIE", "lat": 50.3114957, "lon": 19.0221183}, "cargo": "MOPLEN EP300K -POLIPROPYLEN (PP) A", "gmp": "", "date_loading": "12.05.2026", "date_unloading": "13.05.2026"}, {"loading": {"country": "PL", "postal": "88-101", "city": "INOWROCLAW", "lat": 52.7460751, "lon": 18.2833616}, "unloading": {"country": "PL", "postal": "27200", "city": "STARACHOWICE", "lat": 51.0411805, "lon": 21.0717988}, "cargo": "SODA KALCYNOWANA LEKKA B", "gmp": "", "date_loading": "13.05.2026", "date_unloading": "14.05.2026"}, {"loading": {"country": "PL", "postal": "88-101", "city": "INOWROCŁAW", "lat": 52.7460751, "lon": 18.2833616}, "unloading": {"country": "PL", "postal": "64300", "city": "NOWY TOMYŚL", "lat": 52.3107776, "lon": 16.1434547}, "cargo": "SODA OCZYSZCZONA PASZOWA", "gmp": "TAK", "date_loading": "13.05.2026", "date_unloading": "14.05.2026"}, {"loading": {"country": "PL", "postal": "88-101", "city": "INOWROCŁAW", "lat": 52.7460751, "lon": 18.2833616}, "unloading": {"country": "PL", "postal": "99-100", "city": "ŁĘCZYCA", "lat": 52.0603764, "lon": 19.1711479}, "cargo": "SODA OCZYSZCZONA PASZOWA", "gmp": "TAK", "date_loading": "14.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "PL", "postal": "87-805", "city": "WŁOCŁAWEK", "lat": 52.6603872, "lon": 19.071948}, "unloading": {"country": "PL", "postal": "66-015", "city": "ZIELONA GÓRA", "lat": 51.9707037, "lon": 15.4497688}, "cargo": "Kunststoffgranulat A", "gmp": "", "date_loading": "14.05.2026", "date_unloading": "15.05.2026"}, {"loading": {"country": "PL", "postal": "87-805", "city": "WŁOCŁAWEK", "lat": 52.6603872, "lon": 19.071948}, "unloading": {"country": "PL", "postal": "66-015", "city": "ZIELONA GÓRA", "lat": 51.9707037, "lon": 15.4497688}, "cargo": "Kunststoffgranulat A", "gmp": "", "date_loading": "15.05.2026", "date_unloading": "18.05.2026"}, {"loading": {"country": "PL", "postal": "80-550", "city": "GDAŃSK", "lat": 54.3793434, "lon": 18.6680507}, "unloading": {"country": "PL", "postal": "87-800", "city": "WŁOCŁAWEK", "lat": 52.6445538, "lon": 19.0579493}, "cargo": "SJENIT NEFELINOWY A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "PL", "postal": "87-805", "city": "WŁOCŁAWEK", "lat": 52.6603872, "lon": 19.071948}, "unloading": {"country": "PL", "postal": "66-015", "city": "ZIELONA GÓRA", "lat": 51.9707037, "lon": 15.4497688}, "cargo": "Kunststoffgranulat A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "19.05.2026"}, {"loading": {"country": "PL", "postal": "87-805", "city": "WŁOCŁAWEK", "lat": 52.6603872, "lon": 19.071948}, "unloading": {"country": "PL", "postal": "66-015", "city": "ZIELONA GÓRA", "lat": 51.9707037, "lon": 15.4497688}, "cargo": "Kunststoffgranulat A", "gmp": "", "date_loading": "19.05.2026", "date_unloading": "20.05.2026"}, {"loading": {"country": "PL", "postal": "88-101", "city": "INOWROCLAW", "lat": 52.7460751, "lon": 18.2833616}, "unloading": {"country": "PL", "postal": "27200", "city": "STARACHOWICE", "lat": 51.0411805, "lon": 21.0717988}, "cargo": "SODA KALCYNOWANA LEKKA B", "gmp": "", "date_loading": "20.05.2026", "date_unloading": "21.05.2026"}, {"loading": {"country": "PL", "postal": "80-550", "city": "GDAŃSK", "lat": 54.3793434, "lon": 18.6680507}, "unloading": {"country": "PL", "postal": "87-800", "city": "WŁOCŁAWEK", "lat": 52.6445538, "lon": 19.0579493}, "cargo": "SJENIT NEFELINOWY A", "gmp": "", "date_loading": "20.05.2026", "date_unloading": "21.05.2026"}, {"loading": {"country": "PL", "postal": "87-805", "city": "WŁOCŁAWEK", "lat": 52.6603872, "lon": 19.071948}, "unloading": {"country": "PL", "postal": "66-015", "city": "ZIELONA GÓRA", "lat": 51.9707037, "lon": 15.4497688}, "cargo": "Kunststoffgranulat A", "gmp": "", "date_loading": "20.05.2026", "date_unloading": "21.05.2026"}, {"loading": {"country": "PL", "postal": "87-805", "city": "WŁOCŁAWEK", "lat": 52.6603872, "lon": 19.071948}, "unloading": {"country": "PL", "postal": "66-015", "city": "ZIELONA GÓRA", "lat": 51.9707037, "lon": 15.4497688}, "cargo": "Kunststoffgranulat A", "gmp": "", "date_loading": "21.05.2026", "date_unloading": "22.05.2026"}, {"loading": {"country": "PL", "postal": "87-805", "city": "WŁOCŁAWEK", "lat": 52.6603872, "lon": 19.071948}, "unloading": {"country": "PL", "postal": "66-015", "city": "ZIELONA GÓRA", "lat": 51.9707037, "lon": 15.4497688}, "cargo": "Kunststoffgranulat A", "gmp": "", "date_loading": "22.05.2026", "date_unloading": "25.05.2026"}, {"loading": {"country": "PL", "postal": "80-550", "city": "GDAŃSK", "lat": 54.3793434, "lon": 18.6680507}, "unloading": {"country": "PL", "postal": "87-800", "city": "WŁOCŁAWEK", "lat": 52.6445538, "lon": 19.0579493}, "cargo": "SJENIT NEFELINOWY A", "gmp": "", "date_loading": "25.05.2026", "date_unloading": "26.05.2026"}, {"loading": {"country": "PL", "postal": "87-805", "city": "WŁOCŁAWEK", "lat": 52.6603872, "lon": 19.071948}, "unloading": {"country": "PL", "postal": "66-015", "city": "ZIELONA GÓRA", "lat": 51.9707037, "lon": 15.4497688}, "cargo": "Kunststoffgranulat A", "gmp": "", "date_loading": "25.05.2026", "date_unloading": "26.05.2026"}, {"loading": {"country": "PL", "postal": "87-805", "city": "WŁOCŁAWEK", "lat": 52.6603872, "lon": 19.071948}, "unloading": {"country": "PL", "postal": "66-015", "city": "ZIELONA GÓRA", "lat": 51.9707037, "lon": 15.4497688}, "cargo": "Kunststoffgranulat A", "gmp": "", "date_loading": "26.05.2026", "date_unloading": "27.05.2026"}, {"loading": {"country": "PL", "postal": "88-101", "city": "INOWROCLAW", "lat": 52.7460751, "lon": 18.2833616}, "unloading": {"country": "PL", "postal": "27200", "city": "STARACHOWICE", "lat": 51.0411805, "lon": 21.0717988}, "cargo": "SODA KALCYNOWANA LEKKA B", "gmp": "", "date_loading": "27.05.2026", "date_unloading": "28.05.2026"}, {"loading": {"country": "PL", "postal": "87-805", "city": "WŁOCŁAWEK", "lat": 52.6603872, "lon": 19.071948}, "unloading": {"country": "PL", "postal": "66-015", "city": "ZIELONA GÓRA", "lat": 51.9707037, "lon": 15.4497688}, "cargo": "Kunststoffgranulat A", "gmp": "", "date_loading": "27.05.2026", "date_unloading": "28.05.2026"}, {"loading": {"country": "PL", "postal": "87-805", "city": "WŁOCŁAWEK", "lat": 52.6603872, "lon": 19.071948}, "unloading": {"country": "PL", "postal": "66-015", "city": "ZIELONA GÓRA", "lat": 51.9707037, "lon": 15.4497688}, "cargo": "Kunststoffgranulat A", "gmp": "", "date_loading": "28.05.2026", "date_unloading": "29.05.2026"}, {"loading": {"country": "SE", "postal": "44486", "city": "STENUNGSUND", "lat": 58.0725069, "lon": 11.8229383}, "unloading": {"country": "CZ", "postal": "73564", "city": "HAVIROV - SUCHA", "lat": 49.7940753, "lon": 18.4495235}, "cargo": "HE3490- LS - POLYETHYLENE (PE) A", "gmp": "", "date_loading": "18.05.2026", "date_unloading": "20.05.2026"}]};
+
+async function init() {
+  try {
+    const data = window.EMBEDDED_DATA || await fetch('/api/loads').then(r => r.json());
+    allLoads = data.loads || [];
+    filtered = [...allLoads];
+
+    if (data.updated) {
+      const el = document.getElementById('last-updated');
+      el._rawDate = data.updated;
+      el.textContent = TRANSLATIONS[currentLang].updated + ' ' + data.updated;
+      el.classList.remove('d-none');
+    }
+
+    populateFilters(allLoads);
+    renderTable(filtered);
+    updateCount(filtered.length);
+
+    document.getElementById('loading-msg').classList.add('d-none');
+    document.getElementById('table-wrapper').classList.remove('d-none');
+  } catch (e) {
+    document.getElementById('loading-msg').innerHTML =
+      `<div class="text-danger fw-semibold">${TRANSLATIONS[currentLang].errorData}</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Mailto
+═══════════════════════════════════════════════════════════════════════════ */
+function makeMailto(load) {
+  const t = TRANSLATIONS[currentLang];
+  const l = load.loading, u = load.unloading;
+  const subj = t.emailSubject(l, u, load.date_loading || '');
+  const body = t.emailBody(l, u, load.cargo || '', load.date_loading || '', load.date_unloading || '');
+  return `mailto:${RECIPIENTS}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Table
+═══════════════════════════════════════════════════════════════════════════ */
+function updateCount(n) {
+  document.getElementById('count-pill').textContent = TRANSLATIONS[currentLang].countLoads(n);
+}
+
+function renderTable(loads) {
+  const tbody = document.getElementById('loads-tbody');
+  tbody.innerHTML = '';
+  mapInstances = {};
+  const t = TRANSLATIONS[currentLang];
+
+  if (!loads.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="7">
+        <div class="no-results">
+          <div class="nr-icon">📭</div>
+          <div class="mt-2">${t.noResults}</div>
+        </div>
+      </td></tr>`;
+    return;
+  }
+
+  const buf = [];
+  loads.forEach((load, i) => {
+    const l = load.loading, u = load.unloading;
+    const flagL    = flag(l.country);
+    const flagU    = flag(u.country);
+    const gmpBadge = (load.gmp || '').toUpperCase() === 'TAK'
+      ? '<span class="badge-gmp">GMP</span>' : '';
+    const dates    = buildDates(load.date_loading, load.date_unloading);
+    const mailto   = makeMailto(load);
+
+    buf.push(`
+      <tr class="load-row" onclick="toggleRow(${i})">
+        <td class="row-num hide-mobile">${i + 1}</td>
+        <td>
+          <div class="route-cell">
+            <div class="loc-block">
+              ${flagL}
+              <span class="cc">${esc(l.country)}</span>
+              <span class="postal">${esc(l.postal)}</span>
+              <span class="city-name">${esc(l.city)}</span>
+            </div>
+            <span class="arrow">→</span>
+            <div class="loc-block">
+              ${flagU}
+              <span class="cc">${esc(u.country)}</span>
+              <span class="postal">${esc(u.postal)}</span>
+              <span class="city-name">${esc(u.city)}</span>
+            </div>
+          </div>
+        </td>
+        <td><div class="cargo-text">${esc(load.cargo || '')}</div></td>
+        <td class="text-center hide-mobile">${gmpBadge}</td>
+        <td><div class="date-range">${dates}</div></td>
+        <td onclick="event.stopPropagation()">
+          <a href="${mailto}" class="btn-interest" title="${t.interested}">
+            ✉ <span class="int-text">${t.interested}</span>
+          </a>
+        </td>
+        <td class="text-center">
+          <button class="exp-btn" id="ebtn-${i}"
+                  onclick="toggleRow(${i});event.stopPropagation()">▼</button>
+        </td>
+      </tr>
+      <tr class="expand-row d-none" id="erow-${i}">
+        <td colspan="7">
+          <div class="expand-content">
+            <div class="map-meta">
+              <div class="dist-chip">
+                <span class="icon">🛣️</span>
+                <div>
+                  <div class="lbl">${t.distLabel}</div>
+                  <div class="val" id="dist-${i}">–</div>
+                </div>
+              </div>
+              <a id="gmaps-${i}" href="#" target="_blank" class="btn-gmaps">
+                🗺️ Google Maps
+              </a>
+            </div>
+            <div id="mapwrap-${i}">
+              <div class="map-spinner">
+                <div class="spinner-border" style="width:1.4rem;height:1.4rem;color:#9aa5b4;"></div>
+                <span>${t.loadingMap}</span>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    `);
+  });
+
+  tbody.innerHTML = buf.join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Row expand
+═══════════════════════════════════════════════════════════════════════════ */
+async function toggleRow(i) {
+  const row = document.getElementById(`erow-${i}`);
+  const btn = document.getElementById(`ebtn-${i}`);
+  const open = !row.classList.contains('d-none');
+
+  if (open) {
+    row.classList.add('d-none');
+    btn.classList.remove('open');
+    btn.innerHTML = '▼';
+  } else {
+    row.classList.remove('d-none');
+    btn.classList.add('open');
+    btn.innerHTML = '▲';
+    if (!mapInstances[i]) {
+      mapInstances[i] = true;
+      await buildMap(i, filtered[i]);
+    } else if (mapInstances[i] !== true) {
+      setTimeout(() => mapInstances[i].invalidateSize(), 60);
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Map
+═══════════════════════════════════════════════════════════════════════════ */
+async function buildMap(i, load) {
+  const t = TRANSLATIONS[currentLang];
+  const l = load.loading, u = load.unloading;
+  const wrap = document.getElementById(`mapwrap-${i}`);
+
+  const gmUrl = l.lat && u.lat
+    ? `https://www.google.com/maps/dir/${l.lat},${l.lon}/${u.lat},${u.lon}`
+    : `https://www.google.com/maps/dir/${enc(l.postal+' '+l.city+', '+l.country)}/${enc(u.postal+' '+u.city+', '+u.country)}`;
+  document.getElementById(`gmaps-${i}`).href = gmUrl;
+
+  if (!l.lat || !l.lon || !u.lat || !u.lon) {
+    wrap.innerHTML = `<div class="map-placeholder">${t.noGeo}</div>`;
+    document.getElementById(`dist-${i}`).textContent = 'N/A';
+    mapInstances[i] = null;
+    return;
+  }
+
+  wrap.innerHTML = '<div class="map-div" id="lmap-' + i + '"></div>';
+  const map = L.map(document.getElementById('lmap-' + i), { scrollWheelZoom: false });
+  mapInstances[i] = map;
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org" target="_blank">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(map);
+
+  L.marker([l.lat, l.lon], { icon: makeMarker('#198754', t.locLoad.slice(0,3).toUpperCase()) }).addTo(map)
+    .bindPopup(`<b>${t.locLoad}</b><br>${esc(l.city)}<br>${esc(l.country)} ${esc(l.postal)}`);
+  L.marker([u.lat, u.lon], { icon: makeMarker('#C00000', t.locUnload.slice(0,3).toUpperCase()) }).addTo(map)
+    .bindPopup(`<b>${t.locUnload}</b><br>${esc(u.city)}<br>${esc(u.country)} ${esc(u.postal)}`);
+
+  map.fitBounds([[l.lat, l.lon], [u.lat, u.lon]], { padding: [45, 45] });
+
+  // Valhalla
+  try {
+    const ac = new AbortController();
+    setTimeout(() => ac.abort(), 10000);
+    const r = await fetch('https://valhalla.openstreetmap.de/route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        locations: [{ lon: l.lon, lat: l.lat }, { lon: u.lon, lat: u.lat }],
+        costing: 'auto',
+        costing_options: { auto: { shortest: true } },
+        directions_options: { units: 'km' }
+      }),
+      signal: ac.signal
+    });
+    const data = await r.json();
+    if (data.trip?.legs?.length) {
+      const coords = decodePolyline6(data.trip.legs[0].shape);
+      const km = Math.round(data.trip.summary.length);
+      L.polyline(coords, { color: '#C00000', weight: 5, opacity: .88 }).addTo(map);
+      map.fitBounds(L.latLngBounds(coords), { padding: [28, 28] });
+      document.getElementById(`dist-${i}`).textContent = km.toLocaleString('pl-PL') + ' km';
+      return;
+    }
+    throw new Error('no route');
+  } catch (_) {
+    try {
+      const ac2 = new AbortController();
+      setTimeout(() => ac2.abort(), 9000);
+      const r2 = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${l.lon},${l.lat};${u.lon},${u.lat}?overview=full&geometries=geojson`,
+        { signal: ac2.signal }
+      );
+      const d2 = await r2.json();
+      if (d2.code === 'Ok' && d2.routes?.length) {
+        const km = Math.round(d2.routes[0].distance / 1000);
+        L.geoJSON(d2.routes[0].geometry, { style: { color: '#C00000', weight: 5, opacity: .88 } }).addTo(map);
+        map.fitBounds(L.geoJSON(d2.routes[0].geometry).getBounds(), { padding: [28, 28] });
+        document.getElementById(`dist-${i}`).textContent = km.toLocaleString('pl-PL') + ' km';
+        return;
+      }
+    } catch (_) {}
+    L.polyline([[l.lat, l.lon], [u.lat, u.lon]], {
+      color: '#C00000', weight: 3, dashArray: '14, 9', opacity: .6
+    }).addTo(map);
+    const km = haversine(l.lat, l.lon, u.lat, u.lon);
+    const distEl = document.getElementById(`dist-${i}`);
+    distEl.textContent = '~' + km.toLocaleString('pl-PL') + ' km*';
+    distEl.title = '* Szacowana odległość (linia prosta × 1.3)';
+  }
+}
+
+function decodePolyline6(encoded) {
+  const coords = [];
+  let i = 0, lat = 0, lng = 0;
+  while (i < encoded.length) {
+    let b, shift = 0, result = 0;
+    do { b = encoded.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+    shift = 0; result = 0;
+    do { b = encoded.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+    coords.push([lat / 1e6, lng / 1e6]);
+  }
+  return coords;
+}
+
+function makeMarker(color, label) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="background:${color};color:white;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,.45)">${label}</div>`,
+    iconAnchor: [0, 14]
+  });
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371, p = Math.PI / 180;
+  const dLat = (lat2 - lat1) * p, dLon = (lon2 - lon1) * p;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*p)*Math.cos(lat2*p)*Math.sin(dLon/2)**2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) * 1.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Filters
+═══════════════════════════════════════════════════════════════════════════ */
+function populateFilters(loads) {
+  const fromSet = new Set(), toSet = new Set();
+  loads.forEach(l => {
+    if (l.loading.country)   fromSet.add(l.loading.country);
+    if (l.unloading.country) toSet.add(l.unloading.country);
+  });
+  const fromSel = document.getElementById('filter-from');
+  const toSel   = document.getElementById('filter-to');
+  [...fromSet].sort().forEach(c => fromSel.insertAdjacentHTML('beforeend', `<option>${c}</option>`));
+  [...toSet].sort().forEach(c   => toSel.insertAdjacentHTML('beforeend', `<option>${c}</option>`));
+}
+
+function applyFilters() {
+  const q    = document.getElementById('search').value.toLowerCase();
+  const from = document.getElementById('filter-from').value;
+  const to   = document.getElementById('filter-to').value;
+  const df   = document.getElementById('date-from').value;
+  const dt   = document.getElementById('date-to').value;
+  filtered = allLoads.filter(load => {
+    if (q) {
+      const hay = [
+        load.loading.country, load.loading.city,
+        load.unloading.country, load.unloading.city
+      ].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (from && load.loading.country   !== from)               return false;
+    if (to   && load.unloading.country !== to)                 return false;
+    if (df || dt) {
+      const d = parseDate(load.date_loading);
+      if (df && d && d < new Date(df)) return false;
+      if (dt && d && d > new Date(dt)) return false;
+    }
+    return true;
+  });
+  renderTable(filtered);
+  updateCount(filtered.length);
+}
+
+function resetFilters() {
+  ['search', 'date-from', 'date-to'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('filter-from').value = '';
+  document.getElementById('filter-to').value   = '';
+  filtered = [...allLoads];
+  renderTable(filtered);
+  updateCount(filtered.length);
+}
+
+function parseDate(s) {
+  if (!s) return null;
+  const m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  return m ? new Date(+m[3], +m[2] - 1, +m[1]) : null;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Helpers
+═══════════════════════════════════════════════════════════════════════════ */
+function flag(cc) {
+  if (!cc) return '';
+  return `<img src="https://flagcdn.com/w20/${cc.toLowerCase()}.png" class="flag-img" width="20" height="14" onerror="this.style.display='none'">`;
+}
+function buildDates(d1, d2) {
+  if (!d1 && !d2) return '–';
+  if (!d2 || d1 === d2) return d1 || d2;
+  return `<span>${d1}</span><span class="date-sep">→</span><span>${d2}</span>`;
+}
+function esc(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function enc(s) { return encodeURIComponent((s || '').trim()); }
+
+/* Event bindings */
+document.getElementById('search').addEventListener('input', applyFilters);
+document.getElementById('filter-from').addEventListener('change', applyFilters);
+document.getElementById('filter-to').addEventListener('change', applyFilters);
+document.getElementById('date-from').addEventListener('change', applyFilters);
+document.getElementById('date-to').addEventListener('change', applyFilters);
+
+initQR();
+init();
+</script>
+
+<!-- Licznik odwiedzin -->
+<div style="text-align:center; padding: .8rem; opacity: .55; font-size: .75rem; color: #888;">
+  <img src="https://hits.sh/superb-froyo-acf8eb.netlify.app.svg?style=flat&label=Wizyty&color=143392"
+       alt="licznik odwiedzin" style="vertical-align:middle;">
+</div>
+
+</body>
+</html>
